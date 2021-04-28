@@ -10,7 +10,7 @@ import org.springframework.stereotype.Controller;
 @Controller
 public class TestWebsocket {
   private SimpMessageSendingOperations template;
-  private final int MESSAGE_SIZE_IN_MBS = 100;
+  private final int MESSAGE_SIZE_IN_MBS = 50;
   private final int CHARS_PER_MB = 512000;
 
   @Autowired
@@ -31,12 +31,12 @@ public class TestWebsocket {
 
   @MessageMapping("batch-test")
   public void batchTest(WsRequest request) {
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 5; i++) {
       WsResponse response = new WsResponse();
       for (int j = 0; j < 10; j++) {
         response.getContent().add(generateOneMbString());
       }
-      float percentDone = (i + 1) * 10;
+      float percentDone = (i + 1) * 20;
       response.setPercent(percentDone);
       template.convertAndSend("/topic/batch-test", response);
     }
