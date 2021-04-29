@@ -11,7 +11,7 @@ import org.springframework.stereotype.Controller;
 public class TestWebsocket {
   private SimpMessageSendingOperations template;
   private final int MESSAGE_SIZE = 100;
-  private final int CHARS_PER_STRING = 2048;
+  private final int CHARS_PER_STRING = 16384;
 
   @Autowired
   public TestWebsocket(SimpMessagingTemplate template) {
