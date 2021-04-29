@@ -1,14 +1,14 @@
 package com.example.websockets;
 
 public class WsRequest {
-  private String name;
+  private int stringLength;
 
-  public String getName() {
-    return name;
+  public int getStringLength() {
+    return stringLength;
   }
 
-  public void setName(String name) {
-    this.name = name;
+  public void setStringLength(int stringLength) {
+    this.stringLength = stringLength;
   }
 
 }

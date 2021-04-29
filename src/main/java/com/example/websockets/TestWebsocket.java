@@ -11,7 +11,6 @@ import org.springframework.stereotype.Controller;
 public class TestWebsocket {
   private SimpMessageSendingOperations template;
   private final int MESSAGE_SIZE = 100;
-  private final int CHARS_PER_STRING = 16384;
 
   @Autowired
   public TestWebsocket(SimpMessagingTemplate template) {
@@ -23,7 +22,7 @@ public class TestWebsocket {
   public WsResponse test(WsRequest request) {
     WsResponse response = new WsResponse();
     for (int i = 0; i < MESSAGE_SIZE; i++) {
-      response.getContent().add(generateLargeString());
+      response.getContent().add(generateLargeString(request.getStringLength()));
     }
     response.setPercent(100.0f);
     return response;
@@ -34,7 +33,7 @@ public class TestWebsocket {
     for (int i = 0; i < 10; i++) {
       WsResponse response = new WsResponse();
       for (int j = 0; j < 10; j++) {
-        response.getContent().add(generateLargeString());
+        response.getContent().add(generateLargeString(request.getStringLength()));
       }
       float percentDone = (i + 1) * 10;
       response.setPercent(percentDone);
@@ -43,9 +42,9 @@ public class TestWebsocket {
 
   }
 
-  private String generateLargeString() {
-    StringBuilder sb = new StringBuilder(CHARS_PER_STRING);
-    for (int j = 0; j < CHARS_PER_STRING; j++) {
+  private String generateLargeString(int stringLength) {
+    StringBuilder sb = new StringBuilder(stringLength);
+    for (int j = 0; j < stringLength; j++) {
       sb.append('a');
     }
     return sb.toString();

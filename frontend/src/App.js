@@ -11,10 +11,11 @@ const singleResponse = (
   setSingleNumReceived,
   setSingleTimeStart
 ) => {
+  const stringLength = document.getElementById("string-length").value;
   setSinglePercent(0.0);
   setSingleNumReceived(0);
   setSingleTimeStart(Date.now());
-  stompClient.send("/app/test", {}, JSON.stringify({ name: "testing" }));
+  stompClient.send("/app/test", {}, JSON.stringify({ stringLength }));
 };
 
 const batchResponse = (
@@ -23,11 +24,12 @@ const batchResponse = (
   setBatchTimeStart,
   setBatchCharsReceived
 ) => {
+  const stringLength = document.getElementById("string-length").value;
   setBatchPercent(0.0);
   setBatchNumReceived(0);
   setBatchCharsReceived(0);
   setBatchTimeStart(Date.now());
-  stompClient.send("/app/batch-test", {}, JSON.stringify({ name: "testing" }));
+  stompClient.send("/app/batch-test", {}, JSON.stringify({ stringLength }));
 };
 
 const setConnected = (isConnected) => {};
@@ -107,6 +109,16 @@ function App() {
   return (
     <div className="App">
       <div>
+        <p>
+          Enter length of string response to test different websocket
+          strategies. Each request will generate 100 strings of the given length
+          and return results through a websocket connection. Single result
+          returns all 100 in a single frame. Multiple responses returns 10
+          groups of 10 strings as multiple resonses.
+        </p>
+        <div>
+          <input id="string-length" type="text" />
+        </div>
         <div>Percent: {singlePercent}</div>
         <div>Objects Received: {singleNumReceived}</div>
         <div>Chars Received: {singleCharsReceived}</div>
@@ -121,7 +133,7 @@ function App() {
             )
           }
         >
-          Single
+          Single Response
         </button>
       </div>
       <div>
@@ -140,7 +152,7 @@ function App() {
             )
           }
         >
-          Batch
+          Multiple Responses
         </button>
       </div>
     </div>
