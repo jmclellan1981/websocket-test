@@ -11,7 +11,7 @@ import org.springframework.stereotype.Controller;
 public class TestWebsocket {
   private SimpMessageSendingOperations template;
   private final int MESSAGE_SIZE = 100;
-  private final int CHARS_PER_STRING = 256000;
+  private final int CHARS_PER_STRING = 2048;
 
   @Autowired
   public TestWebsocket(SimpMessagingTemplate template) {
@@ -36,7 +36,7 @@ public class TestWebsocket {
       for (int j = 0; j < 10; j++) {
         response.getContent().add(generateLargeString());
       }
-      float percentDone = (i + 1) * 20;
+      float percentDone = (i + 1) * 10;
       response.setPercent(percentDone);
       template.convertAndSend("/topic/batch-test", response);
     }
