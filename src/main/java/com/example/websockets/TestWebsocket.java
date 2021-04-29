@@ -10,8 +10,8 @@ import org.springframework.stereotype.Controller;
 @Controller
 public class TestWebsocket {
   private SimpMessageSendingOperations template;
-  private final int MESSAGE_SIZE_IN_MBS = 50;
-  private final int CHARS_PER_MB = 512000;
+  private final int MESSAGE_SIZE = 100;
+  private final int CHARS_PER_STRING = 256000;
 
   @Autowired
   public TestWebsocket(SimpMessagingTemplate template) {
@@ -22,8 +22,8 @@ public class TestWebsocket {
   @SendTo("/topic/testing")
   public WsResponse test(WsRequest request) {
     WsResponse response = new WsResponse();
-    for (int i = 0; i < MESSAGE_SIZE_IN_MBS; i++) {
-      response.getContent().add(generateOneMbString());
+    for (int i = 0; i < MESSAGE_SIZE; i++) {
+      response.getContent().add(generateLargeString());
     }
     response.setPercent(100.0f);
     return response;
@@ -31,10 +31,10 @@ public class TestWebsocket {
 
   @MessageMapping("batch-test")
   public void batchTest(WsRequest request) {
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 10; i++) {
       WsResponse response = new WsResponse();
       for (int j = 0; j < 10; j++) {
-        response.getContent().add(generateOneMbString());
+        response.getContent().add(generateLargeString());
       }
       float percentDone = (i + 1) * 20;
       response.setPercent(percentDone);
@@ -43,9 +43,9 @@ public class TestWebsocket {
 
   }
 
-  private String generateOneMbString() {
-    StringBuilder sb = new StringBuilder(CHARS_PER_MB);
-    for (int j = 0; j < CHARS_PER_MB; j++) {
+  private String generateLargeString() {
+    StringBuilder sb = new StringBuilder(CHARS_PER_STRING);
+    for (int j = 0; j < CHARS_PER_STRING; j++) {
       sb.append('a');
     }
     return sb.toString();
