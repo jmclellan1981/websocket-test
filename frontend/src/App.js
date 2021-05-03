@@ -57,7 +57,7 @@ function App() {
       percent: percentDone,
       numReceived: oldData.numReceived + contentReceived.length,
       charsReceived: oldData.charsReceived + charsReceived,
-      endTime: Date.now(),
+      endTime: percentDone === 100 ? Date.now() : null,
     }));
   };
   useEffect(() => {
