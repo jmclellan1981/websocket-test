@@ -45,7 +45,7 @@ public class TestWebsocket {
   private String generateLargeString(int stringLength) {
     StringBuilder sb = new StringBuilder(stringLength);
     for (int j = 0; j < stringLength; j++) {
-      sb.append('a');
+      sb.append("a");
     }
     return sb.toString();
   }
