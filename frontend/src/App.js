@@ -1,104 +1,132 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import Websocket from "./websockets/Websocket";
 import RequestPanel from "./components/RequestPanel";
+import {
+  updatePercentDone as updateSinglePercentDone,
+  updateCharsReceived as updateSingleCharsReceived,
+  updateObjectsReceived as updateSingleObjectsReceived,
+  addResponseTime as addSingleResponseTime,
+  resetData as resetSingleData,
+} from "./redux/singleResponseTimesSlice";
+
+import {
+  updatePercentDone as updateMultiplePercentDone,
+  updateCharsReceived as updateMultipleCharsReceived,
+  updateObjectsReceived as updateMultipleObjectsReceived,
+  addResponseTime as addMultipleResponseTime,
+  resetData as resetMultiData,
+} from "./redux/multiResponseTimesSlice";
 import "./App.css";
 
+const SINGLE_REPLY = "/app/test";
+const MULTI_REPLY = "/app/batch-test";
+
 function App() {
+  const dispatch = useDispatch();
+  const singleData = useSelector((state) => state.singleReplyData);
+  const multiData = useSelector((state) => state.multiReplyData);
   const [stompClient, setStompClient] = useState(null);
-  const [singleRequestData, setSingleRequestData] = useState({
-    percent: 0,
-    numReceived: 0,
-    charsReceived: 0,
-  });
-  const [batchRequestData, setBatchRequestData] = useState({
-    percent: 0,
-    numReceived: 0,
-    charsReceived: 0,
-    endTime: Date.now(),
-  });
-  const clearSingleResponseData = () => {
-    setSingleRequestData({
-      percent: 0,
-      numReceived: 0,
-      charsReceived: 0,
-    });
-  };
-  const clearBatchResponseData = () => {
-    setBatchRequestData({
-      percent: 0,
-      numReceived: 0,
-      charsReceived: 0,
-    });
-  };
-  const singleResponse = (response) => {
-    const contentReceived = JSON.parse(response.body).content;
-    const percentDone = JSON.parse(response.body).percent;
-    let charsReceived = 0;
-    for (let i = 0; i < contentReceived.length; i++) {
-      charsReceived += contentReceived[i].length;
+  const [startTime, setStartTime] = useState(null);
+  const startTimeRef = useRef();
+  startTimeRef.current = startTime;
+
+  const sendRequest = (requestUrl) => {
+    if (requestUrl === SINGLE_REPLY) {
+      dispatch(resetSingleData());
+    } else {
+      dispatch(resetMultiData());
     }
-    setSingleRequestData((oldData) => ({
-      percent: percentDone,
-      numReceived: oldData.numReceived + contentReceived.length,
-      charsReceived: oldData.charsReceived + charsReceived,
-      endTime: Date.now(),
-    }));
+    setStartTime(Date.now());
+    const payloadSize = document.getElementById("payload-size")
+      ? document.getElementById("payload-size").value
+      : 1;
+    if (stompClient) {
+      stompClient.sendMessage(
+        requestUrl,
+        JSON.stringify({ payloadSize: payloadSize })
+      );
+    }
   };
 
-  const batchResponse = (response) => {
-    const contentReceived = JSON.parse(response.body).content;
-    const percentDone = JSON.parse(response.body).percent;
+  const batchResponse = useCallback(
+    (response) => {
+      const contentReceived = JSON.parse(response.body).content;
+      const percentDone = JSON.parse(response.body).percent;
+      if (percentDone === 100) {
+        const endTime = Date.now();
+        const responseTime = endTime - startTimeRef.current;
+        dispatch(addMultipleResponseTime(responseTime));
+      }
+      let charsReceived = 0;
+      for (let i = 0; i < contentReceived.length; i++) {
+        charsReceived += contentReceived[i].length;
+      }
+      dispatch(updateMultiplePercentDone(percentDone));
+      dispatch(updateMultipleCharsReceived(charsReceived));
+      dispatch(updateMultipleObjectsReceived(contentReceived.length));
+    },
+    [dispatch]
+  );
 
-    let charsReceived = 0;
-    for (let i = 0; i < contentReceived.length; i++) {
-      charsReceived += contentReceived[i].length;
-    }
-    setBatchRequestData((oldData) => ({
-      percent: percentDone,
-      numReceived: oldData.numReceived + contentReceived.length,
-      charsReceived: oldData.charsReceived + charsReceived,
-      endTime: percentDone === 100 ? Date.now() : null,
-    }));
-  };
   useEffect(() => {
     const websocket = new Websocket();
-    websocket.addSubscription("/topic/batch-test", (response) =>
-      batchResponse(response)
-    );
-    websocket.addSubscription("/topic/testing", (response) =>
-      singleResponse(response)
-    );
     websocket.connect("/app/gs-guide-websocket");
     setStompClient(websocket);
   }, []);
+  useEffect(() => {
+    const singleResponse = (response) => {
+      const contentReceived = JSON.parse(response.body).content;
+      const percentDone = JSON.parse(response.body).percent;
+      const endTime = Date.now();
+      const responseTime = endTime - startTimeRef.current;
+      let charsReceived = 0;
+      for (let i = 0; i < contentReceived.length; i++) {
+        charsReceived += contentReceived[i].length;
+      }
+      dispatch(addSingleResponseTime(responseTime));
+      dispatch(updateSinglePercentDone(percentDone));
+      dispatch(updateSingleCharsReceived(charsReceived));
+      dispatch(updateSingleObjectsReceived(contentReceived.length));
+    };
+
+    if (stompClient) {
+      stompClient.addSubscription("/topic/batch-test", (response) =>
+        batchResponse(response)
+      );
+      stompClient.addSubscription("/topic/testing", (response) =>
+        singleResponse(response)
+      );
+    }
+  }, [batchResponse, dispatch, startTime, stompClient]);
   return (
     <div className="App">
       <p>
-        Enter length of string response to test different websocket strategies.
-        Each request will generate 100 strings of the given length and return
+        Enter payload size to test different websocket strategies. Each request
+        will generate 100 strings with total size equaling the input and return
         results through a websocket connection. Single result returns all 100 in
         a single frame. Multiple responses returns 10 groups of 10 strings as
-        multiple resonses.
+        multiple responses.
       </p>
 
       <div>
-        <input id="string-length" type="text" />
+        <span>
+          Payload Size (in MB): <input id="payload-size" type="number" />
+        </span>
       </div>
       <div style={{ display: "flex", justifyContent: "space-evenly" }}>
-        <RequestPanel
-          client={stompClient}
-          requestUrl="/app/test"
-          panelName="Single Response"
-          requestData={singleRequestData}
-          clearData={clearSingleResponseData}
-        />
-        <RequestPanel
-          client={stompClient}
-          requestUrl="/app/batch-test"
-          panelName="Multiple Responses"
-          requestData={batchRequestData}
-          clearData={clearBatchResponseData}
-        />
+        <div>
+          <RequestPanel responseData={singleData} />
+          <button type="button" onClick={() => sendRequest(SINGLE_REPLY)}>
+            Single Response
+          </button>
+        </div>
+        <div>
+          <RequestPanel responseData={multiData} />
+          <button type="button" onClick={() => sendRequest(MULTI_REPLY)}>
+            Multiple Responses
+          </button>
+        </div>
       </div>
     </div>
   );

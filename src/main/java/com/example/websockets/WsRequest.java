@@ -1,14 +1,14 @@
 package com.example.websockets;
 
 public class WsRequest {
-  private int stringLength;
+  private int payloadSize;
 
-  public int getStringLength() {
-    return stringLength;
+  public int getPayloadSize() {
+    return payloadSize;
   }
 
-  public void setStringLength(int stringLength) {
-    this.stringLength = stringLength;
+  public void setPayloadSize(int payloadSize) {
+    this.payloadSize = payloadSize;
   }
 
 }
